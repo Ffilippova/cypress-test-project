@@ -1,0 +1,15 @@
+{
+  "devDependencies": {
+    "cypress": "^14.4.0"
+  },
+  "scripts": {
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
+    "cy:run:chrome": "cypress run --browser chrome",
+    "cy:run:firefox": "cypress run --browser firefox",
+    "cy:run:headed": "cypress run --headed",
+    "test:e2e:ui": "cypress run --spec 'cypress/e2e/ui/student-registration.cy.js'",
+    "test:e2e:api": "cypress run --spec 'cypress/e2e/api/api_tests.cy.js'"
+
+  }
+}
