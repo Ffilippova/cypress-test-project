@@ -9,16 +9,12 @@ describe('Student Registration Form', () => {
     cy.clearAllCookies();
     cy.clearAllSessionStorage();
   });
-  
+
   beforeEach(() => {
     studentRegistrationPage = new StudentRegistrationPage();
     testUser = TestDataGenerator.getTestUser();
     // Visit the form page
     studentRegistrationPage.visit();
-  });
-
-  afterEach("CleanUp", () => {
-    cy.end();
   });
 
   it('should successfully submit the complete registration form', () => {
@@ -54,10 +50,10 @@ describe('Student Registration Form', () => {
   it('should validate required field errors', () => {
     // Try to submit empty form
     studentRegistrationPage.submitForm();
-    
+
     // Verify form is not submitted (no modal appears)
     cy.get(studentRegistrationPage.confirmationModal).should('not.exist');
-    
+
     // Verify required field validations
     cy.get(studentRegistrationPage.firstNameInput).should('be.visible').
       and('have.css', 'border-color', 'rgb(220, 53, 69)');
@@ -69,10 +65,10 @@ describe('Student Registration Form', () => {
 
   it('should handle different gender selections', () => {
     const genders = ['Male', 'Female', 'Other'];
-    
+
     genders.forEach(gender => {
       const userData = TestDataGenerator.getTestUserWithGender(gender);
-      
+
       studentRegistrationPage.fillCompleteForm(userData);
       studentRegistrationPage.submitForm();
       studentRegistrationPage.verifySubmissionSuccess();

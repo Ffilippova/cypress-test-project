@@ -8,7 +8,7 @@ describe('ReqRes Users API Tests', () => {
     // Generate fresh test data for each test
     testUser = ApiHelpers.generateTestUser();
   });
-  
+
   // Test for GET /api/users/{id} - Get single user
   context('GET /api/users/{id}', () => {
 
@@ -19,15 +19,15 @@ describe('ReqRes Users API Tests', () => {
       }).then((response) => {
         // Status validation
         ApiHelpers.validateStatusCode(response, ApiConstants.STATUS_CODES.OK);
-        
+
         // Performance validation
         ApiHelpers.validateResponseTime(response, ApiConstants.RESPONSE_TIMES.ACCEPTABLE);
-        
+
         // Response structure validation
         expect(response.body).to.have.property('data');
         ApiHelpers.validateUserObject(response.body.data);
         expect(response.body.data.id).to.equal(ApiConstants.TEST_DATA.EXISTING_USER_ID);
-        
+
         // Support info validation
         ApiHelpers.validateSupportInfo(response);
       });
@@ -57,7 +57,7 @@ describe('ReqRes Users API Tests', () => {
 
     it('should have consistent response schema across different user IDs', () => {
       const userIds = [1, 2, 3];
-      
+
       userIds.forEach(userId => {
         ApiHelpers.makeRequest({
           method: 'GET',
@@ -81,19 +81,19 @@ describe('ReqRes Users API Tests', () => {
         // Status and performance validation
         ApiHelpers.validateStatusCode(response, ApiConstants.STATUS_CODES.OK);
         ApiHelpers.validateResponseTime(response, ApiConstants.RESPONSE_TIMES.ACCEPTABLE);
-        
+
         // Pagination validation
         ApiHelpers.validatePaginationResponse(response, 1);
-        
+
         // Data validation
         expect(response.body.data.length).to.be.greaterThan(0);
         expect(response.body.data.length).to.equal(response.body.per_page);
-        
+
         // Validate each user object
         response.body.data.forEach(user => {
           ApiHelpers.validateUserObject(user);
         });
-        
+
         // Support info validation
         ApiHelpers.validateSupportInfo(response);
       });
@@ -132,14 +132,14 @@ describe('ReqRes Users API Tests', () => {
 
     it('should maintain data consistency across pages', () => {
       let firstPageUsers;
-      
+
       // Get first page
       ApiHelpers.makeRequest({
         method: 'GET',
         url: `${ApiConstants.BASE_URL}${ApiConstants.ENDPOINTS.USERS}?page=1&per_page=3`
       }).then((firstResponse) => {
         firstPageUsers = firstResponse.body.data.map(user => user.id);
-        
+
         // Get second page
         return ApiHelpers.makeRequest({
           method: 'GET',
@@ -147,7 +147,7 @@ describe('ReqRes Users API Tests', () => {
         });
       }).then((secondResponse) => {
         const secondPageUsers = secondResponse.body.data.map(user => user.id);
-        
+
         // Ensure no overlap between pages
         const intersection = firstPageUsers.filter(id => secondPageUsers.includes(id));
         expect(intersection, 'User IDs should not overlap between pages').to.be.empty;
@@ -160,7 +160,7 @@ describe('ReqRes Users API Tests', () => {
         url: `${ApiConstants.BASE_URL}${ApiConstants.ENDPOINTS.USERS}`
       }).then((response) => {
         ApiHelpers.validateResponseTime(response, ApiConstants.RESPONSE_TIMES.FAST);
-        
+
         // Additional performance metrics
         expect(response.body.data.length, 'Should return reasonable number of users').to.be.within(1, 20);
       });
@@ -176,18 +176,18 @@ describe('ReqRes Users API Tests', () => {
       }).then((response) => {
         // Status validation
         ApiHelpers.validateStatusCode(response, ApiConstants.STATUS_CODES.CREATED);
-        
+
         // Response data validation
         expect(response.body).to.have.property('name', testUser.name);
         expect(response.body).to.have.property('job', testUser.job);
         expect(response.body).to.have.property('id').that.is.a('string');
         expect(response.body).to.have.property('createdAt');
-        
+
         // Date validation
         const createdAt = new Date(response.body.createdAt);
         expect(createdAt.toString()).to.not.equal('Invalid Date');
         expect(createdAt.getTime()).to.be.closeTo(Date.now(), 5000); // Within 5 seconds
-        
+
         // Store created user for potential cleanup
         cy.wrap(response.body).as('createdUser');
       });
@@ -195,7 +195,7 @@ describe('ReqRes Users API Tests', () => {
 
     it('should handle partial user data creation', () => {
       const partialUser = { name: testUser.name };
-      
+
       ApiHelpers.makeRequest({
         method: 'POST',
         url: `${ApiConstants.BASE_URL}${ApiConstants.ENDPOINTS.USERS}`,
@@ -235,22 +235,24 @@ describe('ReqRes Users API Tests', () => {
       });
     });
 
-    it('should generate unique IDs for concurrent user creation', () => {
+    it('should generate unique IDs for concurrent user creation (alternative)', () => {
       const users = Array.from({ length: 3 }, () => ApiHelpers.generateTestUser());
-      const requests = users.map(user => 
+      const collectedIds = [];
+
+      users.forEach(user => {
         ApiHelpers.makeRequest({
           method: 'POST',
           url: `${ApiConstants.BASE_URL}${ApiConstants.ENDPOINTS.USERS}`,
           body: user
-        })
-      );
+        }).then(response => {
+          collectedIds.push(response.body.id);
+        });
+      });
 
-      // Execute all requests and collect IDs
-      Promise.all(requests).then(responses => {
-        const ids = responses.map(response => response.body.id);
-        const uniqueIds = [...new Set(ids)];
-        
-        expect(uniqueIds.length, 'All generated IDs should be unique').to.equal(ids.length);
+      // Check uniqueness after all requests
+      cy.then(() => {
+        const uniqueIds = [...new Set(collectedIds)];
+        expect(uniqueIds.length, 'All generated IDs should be unique').to.equal(collectedIds.length);
       });
     });
   });
@@ -320,14 +322,14 @@ describe('ReqRes Users API Tests', () => {
         },
         {
           description: 'invalid API key',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'x-api-key': 'invalid-key-12345'
           }
         },
         {
           description: 'empty API key',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'x-api-key': ''
           }
